@@ -1,0 +1,11 @@
+{
+  "presets": [
+    "@babel/preset-env",    // Transpile modern JS
+    "@babel/preset-react",  // JSX support
+    "@babel/preset-typescript" // TypeScript support
+  ],
+  "plugins": [
+    "@babel/plugin-proposal-class-properties", // Support class properties
+    "@babel/plugin-transform-runtime"          // Reuse Babel helper functions
+  ]
+}
