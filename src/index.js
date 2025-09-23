@@ -29,7 +29,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Router Registry
-app.use("/api/users", authRouter);
+app.use("/api/auth", authRouter);
 
 // Health check route
 app.get("/health", (req, res) => {
