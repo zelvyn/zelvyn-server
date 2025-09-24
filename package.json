@@ -10,7 +10,12 @@
     "start": "node dist/index.js",
     "dev": "nodemon --exec babel-node src/index.js",
     "build": "babel src -d dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "format": "prettier --write src/**/*.js",
+    "format:check": "prettier --check src/**/*.js",
+    "prepare": "husky install"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -27,6 +32,16 @@
     "@babel/core": "^7.22.10",
     "@babel/node": "^7.22.10",
     "@babel/preset-env": "^7.22.10",
-    "nodemon": "^3.0.1"
+    "eslint": "^8.57.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.5.2",
+    "nodemon": "^3.0.1",
+    "prettier": "^3.0.0"
+  },
+  "lint-staged": {
+    "src/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

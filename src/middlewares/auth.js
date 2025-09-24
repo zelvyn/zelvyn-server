@@ -23,7 +23,7 @@ export const authenticate = async (req, res, next) => {
 
   try {
     let userEmail;
-    
+
     // Try JWT first
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);

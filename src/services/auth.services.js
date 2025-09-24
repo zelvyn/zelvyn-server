@@ -5,7 +5,8 @@ import { OAuth2Client } from "google-auth-library";
 import { insert, findAll, updateSql } from "../db/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { sendWelcomeEmail } from "../utils/messaging/mailer.js";
+import { sendWelcomeEmail, sendOTPEmail } from "../utils/messaging/mailer.js";
+import { generateOTP, storeOTP, verifyOTP } from "../utils/otpStore.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -71,7 +72,7 @@ export const googleAuthService = async ({ token, userType }) => {
       profile_image: picture,
       google_id: googleId,
       provider: "GOOGLE",
-      username: userName || email.split("@")[0],
+      username: email.split("@")[0],
       user_type: userType || "USER",
       email_verified: true,
       last_login: new Date(),
@@ -132,6 +133,11 @@ export const loginUserService = async (userData) => {
       return { status: 403, data: { error: "Account is inactive." } };
     }
 
+    // Check if user has password (might be Google user)
+    if (!user.password_hash) {
+      return { status: 401, data: { error: "Invalid email or password." } };
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
@@ -161,6 +167,164 @@ export const loginUserService = async (userData) => {
     };
   } catch (error) {
     console.error("Error in login:", error);
+    return sendError(500, "Internal server error.");
+  }
+};
+
+export const forgotPasswordService = async (userData) => {
+  try {
+    const { email } = userData;
+    const missingFieldsError = checkMissingFields(userData, ["email"]);
+    if (missingFieldsError) {
+      return missingFieldsError;
+    }
+
+    // Check if user exists
+    const existingUsers = await findAll("users", "email = $1", [email]);
+    if (existingUsers.length === 0) {
+      return { status: 404, data: { error: "User not found." } };
+    }
+
+    const user = existingUsers[0];
+
+    // Check if user has password (not Google user)
+    if (!user.password_hash) {
+      return {
+        status: 400,
+        data: {
+          error:
+            "This account uses Google sign-in. Please use Google to login.",
+        },
+      };
+    }
+
+    // Generate and store OTP
+    const otp = generateOTP();
+    storeOTP(email, otp, "password_reset");
+
+    // Send OTP email
+    await sendOTPEmail(email, otp, "password_reset");
+
+    return {
+      status: 200,
+      data: {
+        success: true,
+        message: "Password reset OTP sent to your email.",
+      },
+    };
+  } catch (error) {
+    console.error("Error in forgot password:", error);
+    return sendError(500, "Internal server error.");
+  }
+};
+
+export const resetPasswordService = async (userData) => {
+  try {
+    const { email, otp, newPassword, confirmPassword } = userData;
+    const missingFieldsError = checkMissingFields(userData, [
+      "email",
+      "otp",
+      "newPassword",
+      "confirmPassword",
+    ]);
+    if (missingFieldsError) {
+      return missingFieldsError;
+    }
+
+    if (newPassword !== confirmPassword) {
+      return { status: 400, data: { error: "Passwords do not match." } };
+    }
+
+    if (!PASSWORD_REGEX.test(newPassword)) {
+      return {
+        status: 400,
+        data: { error: "Password must be at least 6 characters long." },
+      };
+    }
+
+    // Verify OTP
+    if (!verifyOTP(email, otp, "password_reset")) {
+      return { status: 400, data: { error: "Invalid or expired OTP." } };
+    }
+
+    // Check if user exists
+    const existingUsers = await findAll("users", "email = $1", [email]);
+    if (existingUsers.length === 0) {
+      return { status: 404, data: { error: "User not found." } };
+    }
+
+    // Hash new password and update
+    const password_hash = await bcrypt.hash(newPassword, 10);
+    await updateSql("users", { password_hash }, "email = $1", [email]);
+
+    return {
+      status: 200,
+      data: { success: true, message: "Password reset successfully." },
+    };
+  } catch (error) {
+    console.error("Error in reset password:", error);
+    return sendError(500, "Internal server error.");
+  }
+};
+
+export const sendVerificationEmailService = async (userData) => {
+  try {
+    const { email } = userData;
+    const missingFieldsError = checkMissingFields(userData, ["email"]);
+    if (missingFieldsError) {
+      return missingFieldsError;
+    }
+
+    // Check if user exists
+    const existingUsers = await findAll("users", "email = $1", [email]);
+    if (existingUsers.length === 0) {
+      return { status: 404, data: { error: "User not found." } };
+    }
+
+    const user = existingUsers[0];
+    if (user.email_verified) {
+      return { status: 400, data: { error: "Email is already verified." } };
+    }
+
+    // Generate and store OTP
+    const otp = generateOTP();
+    storeOTP(email, otp, "email_verification");
+
+    // Send OTP email
+    await sendOTPEmail(email, otp, "email_verification");
+
+    return {
+      status: 200,
+      data: { success: true, message: "Verification OTP sent to your email." },
+    };
+  } catch (error) {
+    console.error("Error in send verification email:", error);
+    return sendError(500, "Internal server error.");
+  }
+};
+
+export const verifyEmailService = async (userData) => {
+  try {
+    const { email, otp } = userData;
+    const missingFieldsError = checkMissingFields(userData, ["email", "otp"]);
+    if (missingFieldsError) {
+      return missingFieldsError;
+    }
+
+    // Verify OTP
+    if (!verifyOTP(email, otp, "email_verification")) {
+      return { status: 400, data: { error: "Invalid or expired OTP." } };
+    }
+
+    // Update user email verification status
+    await updateSql("users", { email_verified: true }, "email = $1", [email]);
+
+    return {
+      status: 200,
+      data: { success: true, message: "Email verified successfully." },
+    };
+  } catch (error) {
+    console.error("Error in verify email:", error);
     return sendError(500, "Internal server error.");
   }
 };

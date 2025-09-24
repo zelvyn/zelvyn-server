@@ -62,10 +62,6 @@ const getRequestData = (req) => {
   }
 };
 
-const isEmptyObject = (obj) => {
-  return obj && Object.keys(obj).length === 0 && obj.constructor === Object;
-};
-
 export const handleResponseWithCookie = async (service, req, res) => {
   try {
     const requestData = getRequestData(req);
@@ -77,16 +73,16 @@ export const handleResponseWithCookie = async (service, req, res) => {
     }
 
     const result = await service(requestData);
-    
+
     if (result.token) {
-      res.cookie('token', result.token, {
+      res.cookie("token", result.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       });
     }
-    
+
     return res.status(result.status).json(result.data);
   } catch (error) {
     console.error("Operation failed:", error);

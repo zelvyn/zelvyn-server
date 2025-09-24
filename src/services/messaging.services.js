@@ -44,11 +44,15 @@ export const sendWelcomeEmailService = async ({ email, name }) => {
 // Future: SMS service placeholder
 export const sendSMSService = async ({ to, message }) => {
   // TODO: Implement SMS service (Twilio, etc.)
+  console.log(to, message);
+
   return sendError(501, "SMS service not implemented yet");
 };
 
 // Future: Push notification service placeholder
 export const sendPushNotificationService = async ({ to, title, body }) => {
+  console.log(to, title, body);
+
   // TODO: Implement push notification service (Firebase, etc.)
   return sendError(501, "Push notification service not implemented yet");
 };
