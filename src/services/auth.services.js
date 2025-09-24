@@ -5,6 +5,7 @@ import { OAuth2Client } from "google-auth-library";
 import { insert, findAll, updateSql } from "../db/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { sendWelcomeEmail } from "../utils/messaging/mailer.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -70,11 +71,17 @@ export const googleAuthService = async ({ token, userType }) => {
       profile_image: picture,
       google_id: googleId,
       provider: "GOOGLE",
+      username: userName || email.split("@")[0],
       user_type: userType || "USER",
       email_verified: true,
       last_login: new Date(),
       google_access_token: token,
     });
+
+    // Send welcome email for new Google users (don't wait for it)
+    sendWelcomeEmail(newUser.email, newUser.name).catch((err) =>
+      console.error("Welcome email failed:", err)
+    );
 
     // Generate JWT token for new user
     jwtToken = jwt.sign(
@@ -212,6 +219,11 @@ export const signupUserService = async (userData) => {
 
     const createdUser = await insert("users", newUser);
     delete createdUser.password_hash;
+
+    // Send welcome email (don't wait for it)
+    sendWelcomeEmail(createdUser.email, createdUser.name).catch((err) =>
+      console.error("Welcome email failed:", err)
+    );
 
     // Generate JWT token for auto-login
     const token = jwt.sign(

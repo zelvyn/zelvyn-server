@@ -5,6 +5,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import authRouter from "./routes/auth.routes.js";
+import messagingRouter from "./routes/messaging.routes.js";
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -30,6 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Router Registry
 app.use("/api/auth", authRouter);
+app.use("/api/messaging", messagingRouter);
 
 // Health check route
 app.get("/health", (req, res) => {
