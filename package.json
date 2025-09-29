@@ -7,9 +7,9 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node src/index.js",
     "dev": "nodemon --exec babel-node src/index.js",
-    "build": "babel src -d dist",
+    "build": "npm install",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
