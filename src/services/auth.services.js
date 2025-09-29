@@ -58,9 +58,25 @@ export const googleAuthService = async ({ token, userType }) => {
         { expiresIn: "30d" }
       );
 
+      // Prepare user data for frontend
+      const userData = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        userType: userType || user.user_type,
+        phone: user.phone,
+        profileImage: user.profile_image,
+        emailVerified: true,
+        isActive: user.is_active,
+        provider: user.provider,
+        createdAt: user.created_at,
+        lastLogin: new Date(),
+      };
+
       return {
         status: 200,
-        data: { success: true, message: "Login successful", data: user },
+        data: { success: true, message: "Login successful", data: userData },
         token: jwtToken,
       };
     }
@@ -95,12 +111,28 @@ export const googleAuthService = async ({ token, userType }) => {
       { expiresIn: "30d" }
     );
 
+    // Prepare new user data for frontend
+    const userData = {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      username: newUser.username,
+      userType: newUser.user_type,
+      phone: newUser.phone,
+      profileImage: newUser.profile_image,
+      emailVerified: newUser.email_verified,
+      isActive: newUser.is_active,
+      provider: newUser.provider,
+      createdAt: newUser.created_at,
+      lastLogin: newUser.last_login,
+    };
+
     return {
       status: 201,
       data: {
         success: true,
         message: "User created successfully",
-        data: newUser,
+        data: userData,
       },
       token: jwtToken,
     };
@@ -147,7 +179,21 @@ export const loginUserService = async (userData) => {
     // Update last_login
     await updateSql("users", { last_login: new Date() }, "id = $1", [user.id]);
 
-    delete user.password_hash;
+    // Prepare user data for frontend
+    const userData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      userType: user.user_type,
+      phone: user.phone,
+      profileImage: user.profile_image,
+      emailVerified: user.email_verified,
+      isActive: user.is_active,
+      provider: user.provider,
+      createdAt: user.created_at,
+      lastLogin: new Date(),
+    };
 
     // Generate JWT token
     const token = jwt.sign(
@@ -162,7 +208,7 @@ export const loginUserService = async (userData) => {
 
     return {
       status: 200,
-      data: { success: true, message: "Login successful", data: user },
+      data: { success: true, message: "Login successful", data: userData },
       token,
     };
   } catch (error) {
@@ -218,12 +264,34 @@ export const forgotPasswordService = async (userData) => {
   }
 };
 
+export const verifyOTPService = async (userData) => {
+  try {
+    const { email, otp } = userData;
+    const missingFieldsError = checkMissingFields(userData, ["email", "otp"]);
+    if (missingFieldsError) {
+      return missingFieldsError;
+    }
+
+    // Verify OTP
+    if (!verifyOTP(email, otp, "password_reset")) {
+      return { status: 400, data: { error: "Invalid or expired OTP." } };
+    }
+
+    return {
+      status: 200,
+      data: { success: true, message: "OTP verified successfully." },
+    };
+  } catch (error) {
+    console.error("Error in verify OTP:", error);
+    return sendError(500, "Internal server error.");
+  }
+};
+
 export const resetPasswordService = async (userData) => {
   try {
-    const { email, otp, newPassword, confirmPassword } = userData;
+    const { email, newPassword, confirmPassword } = userData;
     const missingFieldsError = checkMissingFields(userData, [
       "email",
-      "otp",
       "newPassword",
       "confirmPassword",
     ]);
@@ -240,11 +308,6 @@ export const resetPasswordService = async (userData) => {
         status: 400,
         data: { error: "Password must be at least 6 characters long." },
       };
-    }
-
-    // Verify OTP
-    if (!verifyOTP(email, otp, "password_reset")) {
-      return { status: 400, data: { error: "Invalid or expired OTP." } };
     }
 
     // Check if user exists

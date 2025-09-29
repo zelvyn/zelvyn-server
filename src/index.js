@@ -13,9 +13,10 @@ const port = process.env.PORT || 8080;
 // CORS configuration
 app.use(
   cors({
-    origin: "*",
+    origin: ["http://localhost:3000", "https://zelvyn.vercel.app"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 

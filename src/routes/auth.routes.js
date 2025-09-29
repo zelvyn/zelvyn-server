@@ -4,6 +4,7 @@ import {
   loginUserController,
   googleAuthController,
   forgotPasswordController,
+  verifyOTPController,
   resetPasswordController,
   sendVerificationEmailController,
   verifyEmailController,
@@ -18,6 +19,7 @@ authRouter.post("/google", googleAuthController);
 
 // Password reset routes
 authRouter.post("/forgot-password", forgotPasswordController);
+authRouter.post("/verify-otp", verifyOTPController);
 authRouter.post("/reset-password", resetPasswordController);
 
 // Email verification routes

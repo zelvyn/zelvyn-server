@@ -3,6 +3,7 @@ import {
   googleAuthService,
   loginUserService,
   forgotPasswordService,
+  verifyOTPService,
   resetPasswordService,
   sendVerificationEmailService,
   verifyEmailService,
@@ -26,6 +27,10 @@ export const googleAuthController = async (req, res) => {
 
 export const forgotPasswordController = async (req, res) => {
   handleResponse(forgotPasswordService, req, res);
+};
+
+export const verifyOTPController = async (req, res) => {
+  handleResponse(verifyOTPService, req, res);
 };
 
 export const resetPasswordController = async (req, res) => {
