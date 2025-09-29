@@ -81,6 +81,12 @@ export const handleResponseWithCookie = async (service, req, res) => {
         sameSite: "strict",
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
+
+      // Also include token in response for frontend
+      return res.status(result.status).json({
+        ...result.data,
+        token: result.token,
+      });
     }
 
     return res.status(result.status).json(result.data);

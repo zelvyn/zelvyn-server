@@ -4,8 +4,10 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.routes.js";
 import messagingRouter from "./routes/messaging.routes.js";
+import profileRouter from "./routes/profile.routes.js";
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -29,10 +31,12 @@ app.use((req, res, next) => {
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Router Registry
 app.use("/api/auth", authRouter);
 app.use("/api/messaging", messagingRouter);
+app.use("/api/profiles", profileRouter);
 
 // Health check route
 app.get("/health", (req, res) => {

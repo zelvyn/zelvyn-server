@@ -130,6 +130,24 @@ export async function updateSql(table, data, whereClause, whereParams = []) {
   }
 }
 
+// Delete records
+export async function deleteSql(table, whereClause, whereParams = []) {
+  try {
+    if (!whereClause || typeof whereClause !== "string") {
+      throw new Error("Invalid whereClause provided");
+    }
+
+    const query = `DELETE FROM ${table} WHERE ${whereClause}`;
+    const client = await pool.connect();
+    const result = await client.query(query, whereParams);
+    client.release();
+    return result.rowCount;
+  } catch (error) {
+    console.error("Error during delete:", error.message);
+    throw error;
+  }
+}
+
 // Find all records
 export async function findAll(table, whereClause = "1=1", whereParams = []) {
   try {
